@@ -65,11 +65,7 @@ module TestSugar
     def build_test(name, &block)
       test_name = Context.build_test_name(name)
 
-      define_method test_name do
-        Context.setup
-        block()
-        Context.teardown
-      end
+      define_method test_name, &block
     end
 
     def warn(message)
@@ -80,12 +76,18 @@ module TestSugar
   class Context
     include Helpers
 
+    attr_reader :name, :setups, :teardowns
+
     def initialize(name, &block)
       @name = name
       @block = block
 
       @setups = []
       @teardowns = []
+    end
+
+    def build
+      @block.call
     end
 
     def self.setup
@@ -104,8 +106,8 @@ module TestSugar
       end
     end
 
-    def self.build_test_name(name)
-      full_name = ""
+    def self.build_test_name(name="")
+      full_name = "test "
       @context_stack.each do |context|
         full_name << context.name << " "
       end
@@ -113,15 +115,15 @@ module TestSugar
       full_name.gsub(/\W+/, '_').downcase
     end
 
-    def self.push_context(name, &block)
-      @@context_stack ||= []
+    def self.push(name, &block)
+      @context_stack ||= []
 
       context = Context.new(name, &block)
       @context_stack.push(context)
 
       context.build
 
-      @context_stack.pop(context)
+      @context_stack.pop
     end
 
     def self.context_stack
@@ -139,5 +141,8 @@ module TestSugar
 end
 
 class MiniTest::Unit::TestCase
-  include TestSuger::Helpers
+  extend TestSugar::Helpers
+  # TODO: figure out how to get the setup and teardown stuff to run. Should just
+  # be figuring out how to hook into TestSugar::Context.setup and
+  # TestSugar::Context.teardown.
 end
