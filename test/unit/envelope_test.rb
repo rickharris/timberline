@@ -29,7 +29,7 @@ class EnvelopeTest < MiniTest::Unit::TestCase
     end
   end
 
-  a "Envelope with contents" do
+  an "Envelope with contents" do
     setup do
       @envelope = Timberline::Envelope.new
       @envelope.contents = "Test data"

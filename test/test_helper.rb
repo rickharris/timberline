@@ -29,6 +29,11 @@ module TestSugar
       Context.push(name, &block)
     end
 
+    def an(name, &block)
+      name = "an " << name
+      Context.push(name, &block)
+    end
+
     def and(name, &block)
       name = "and " << name
       Context.push(name, &block)
