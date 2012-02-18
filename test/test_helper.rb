@@ -25,6 +25,17 @@ end
 module TestSugar
   module Helpers
     def a(name, &block)
+      name = "a " << name
+      Context.push(name, &block)
+    end
+
+    def and(name, &block)
+      name = "and " << name
+      Context.push(name, &block)
+    end
+
+    def that(name, &block)
+      name = "that " << name
       Context.push(name, &block)
     end
 
@@ -52,18 +63,13 @@ module TestSugar
     end
 
     def build_test(name, &block)
-      #build out the full context text
+      test_name = Context.build_test_name(name)
 
-      #build the test name with the context text and the test name
-
-      #define_method test_name do
-
-        #run setups based on the context stack
-
-        #run the test
-
-        #run teardowns based on the context stack
-      #end
+      define_method test_name do
+        Context.setup
+        block()
+        Context.teardown
+      end
     end
 
     def warn(message)
@@ -80,6 +86,31 @@ module TestSugar
 
       @setups = []
       @teardowns = []
+    end
+
+    def self.setup
+      @context_stack.each do |context|
+        context.setups.each do |setup|
+          setup()
+        end
+      end
+    end
+
+    def self.teardown
+      @context_stack.each do |context|
+        context.teardowns.each do |teardown|
+          teardown()
+        end
+      end
+    end
+
+    def self.build_test_name(name)
+      full_name = ""
+      @context_stack.each do |context|
+        full_name << context.name << " "
+      end
+      full_name << name
+      full_name.gsub(/\W+/, '_').downcase
     end
 
     def self.push_context(name, &block)
@@ -102,7 +133,7 @@ module TestSugar
     end
 
     def self.current_context?
-      !!@context_stack.last
+      !@context_stack.empty?
     end
   end
 end
